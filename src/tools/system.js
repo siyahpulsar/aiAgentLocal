@@ -1,0 +1,119 @@
+const { spawn } = require('child_process');
+const path = require('path');
+const fs = require('fs');
+
+const { agentState, broadcastTerminal } = require('../state');
+
+// Screenshot Capture Helper (Native PowerShell using System.Drawing)
+function captureScreenshot() {
+  return new Promise((resolve) => {
+    const filename = `screenshot_${Date.now()}.png`;
+    const publicScreenshotsDir = path.join(__dirname, '..', '..', 'public', 'screenshots');
+    const savePath = path.join(publicScreenshotsDir, filename);
+
+    if (!fs.existsSync(publicScreenshotsDir)) {
+      fs.mkdirSync(publicScreenshotsDir, { recursive: true });
+    }
+
+    const psCommand = `[Reflection.Assembly]::LoadWithPartialName('System.Drawing'); [Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms'); $bounds = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds; $bmp = New-Object System.Drawing.Bitmap $bounds.Width, $bounds.Height; $graphics = [System.Drawing.Graphics]::FromImage($bmp); $graphics.CopyFromScreen($bounds.Location, [System.Drawing.Point]::Empty, $bounds.Size); $bmp.Save('${savePath.replace(/\\/g, '\\\\')}', [System.Drawing.Imaging.ImageFormat]::Png); $graphics.Dispose(); $bmp.Dispose();`;
+
+    broadcastTerminal(`\n> [SCREENSHOT] Capturing screen and saving to ${filename}...\n`);
+
+    const child = spawn('powershell.exe', ['-NoProfile', '-Command', psCommand]);
+
+    let stderr = '';
+    child.stderr.on('data', (data) => {
+      stderr += data.toString();
+    });
+
+    child.on('close', (code) => {
+      if (code === 0) {
+        broadcastTerminal(`> Screenshot captured successfully: /screenshots/${filename}\n`);
+        resolve({ success: true, filename: `/screenshots/${filename}`, message: `Screenshot captured successfully. Saved as ${filename}` });
+      } else {
+        broadcastTerminal(`> Screenshot capture failed: ${stderr}\n`);
+        resolve({ success: false, message: `Powershell exited with code ${code}. Error: ${stderr}` });
+      }
+    });
+
+    child.on('error', (err) => {
+      broadcastTerminal(`> Screenshot capture failed: ${err.message}\n`);
+      resolve({ success: false, message: err.message });
+    });
+  });
+}
+
+// Safe shell command runner with real-time log streaming
+function runShellCommand(commandString) {
+  return new Promise((resolve) => {
+    broadcastTerminal(`\n> [EXECUTE] ${commandString}\n`);
+
+    const isPowershell = commandString.toLowerCase().startsWith('powershell') || commandString.includes('$');
+    const shell = isPowershell ? 'powershell.exe' : 'cmd.exe';
+    const args = isPowershell ? ['-NoProfile', '-Command', commandString] : ['/c', commandString];
+
+    const child = spawn(shell, args, {
+      cwd: agentState.cwd,
+      env: process.env,
+      shell: true
+    });
+
+    agentState.activeCommandProcess = child;
+
+    child.stdout.on('data', (data) => {
+      const text = data.toString();
+      broadcastTerminal(text);
+    });
+
+    child.stderr.on('data', (data) => {
+      const text = data.toString();
+      broadcastTerminal(`[ERROR] ${text}`);
+    });
+
+    child.on('close', (code) => {
+      agentState.activeCommandProcess = null;
+      broadcastTerminal(`\n> [FINISHED] Command exited with code ${code}\n`);
+      resolve({
+        success: code === 0,
+        exitCode: code,
+        message: `Command completed with exit code ${code}`
+      });
+    });
+
+    child.on('error', (err) => {
+      agentState.activeCommandProcess = null;
+      broadcastTerminal(`\n> [FAILED] Start failed: ${err.message}\n`);
+      resolve({
+        success: false,
+        exitCode: -1,
+        message: `Failed to start process: ${err.message}`
+      });
+    });
+  });
+}
+
+// Open application helper
+function openApplication(target) {
+  return new Promise((resolve) => {
+    broadcastTerminal(`\n> [OPEN] Opening target: ${target}\n`);
+    try {
+      const child = spawn('cmd.exe', ['/c', 'start', '', target], {
+        cwd: agentState.cwd,
+        detached: true,
+        stdio: 'ignore'
+      });
+      child.unref();
+      broadcastTerminal(`> Opened successfully in detached mode.\n`);
+      resolve({ success: true, message: `Successfully opened ${target} in detached mode` });
+    } catch (err) {
+      broadcastTerminal(`[ERROR] ${err.message}\n`);
+      resolve({ success: false, message: err.message });
+    }
+  });
+}
+
+module.exports = {
+  captureScreenshot,
+  runShellCommand,
+  openApplication
+};

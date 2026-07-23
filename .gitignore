@@ -1,0 +1,14 @@
+# Node dependencies
+node_modules/
+
+# Environment configurations
+.env
+
+# System & log files
+*.log
+*.webm
+*.part
+*.mp3
+*.gif
+.DS_Store
+Thumbs.db
