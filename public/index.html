@@ -52,6 +52,9 @@
           <button class="nav-btn" data-tab="help">
             <span class="icon">❓</span> Docs
           </button>
+          <button class="nav-btn" id="btn-open-ide" style="margin-top: 10px; background: rgba(30,144,255,0.2); border: 1px solid rgba(30,144,255,0.5);">
+            <span class="icon">🖥️</span> Open IDE App
+          </button>
         </div>
 
         <!-- Working Directory Card -->
@@ -295,6 +298,32 @@
                 </div>
               </div>
 
+              <!-- LPM (Low Parameter Mode) Settings -->
+              <div class="settings-card">
+                <h3>Low Parameter Mode (LPM) Settings</h3>
+                <div class="setting-item-toggle">
+                  <label class="switch-container">
+                    <input type="checkbox" id="setting-lpm">
+                    <span class="switch-slider"></span>
+                    <span class="switch-label">Enable LPM (Low Parameter Mode)</span>
+                  </label>
+                </div>
+                <div class="setting-item-toggle" id="lpm-om-container" style="display:none; margin-top: 10px; margin-left: 20px;">
+                  <label class="switch-container">
+                    <input type="checkbox" id="setting-lpm-om">
+                    <span class="switch-slider"></span>
+                    <span class="switch-label">Enable LPM OM (Odaklanma Modu)</span>
+                  </label>
+                </div>
+                <div class="input-group" id="lpm-batch-container" style="display:none; margin-top: 15px; margin-left: 20px;">
+                  <label for="setting-lpm-batch" style="margin-bottom: 5px;">LPM Batch Size (Tools per query)</label>
+                  <div style="display: flex; align-items: center;">
+                    <input type="range" id="setting-lpm-batch" min="1" max="18" value="1" oninput="document.getElementById('lpm-batch-val').innerText = this.value" style="flex: 1;">
+                    <span id="lpm-batch-val" style="font-weight: bold; margin-left: 10px; width: 25px; text-align: center;">1</span>
+                  </div>
+                </div>
+              </div>
+
               <!-- Swarm & Whitelist Settings -->
               <div class="settings-card">
                 <h3>Swarm & Auto-Approval Settings</h3>
@@ -405,7 +434,7 @@
                   <!-- Users will be dynamically populated -->
                 </div>
                 <div class="add-banned-row">
-                  <input type="text" id="new-discord-user-input" placeholder="e.g. 911997140572733530 or <@911997140572733530>">
+                  <input type="text" id="new-discord-user-input" placeholder="e.g. 123456789012345678 or <@123456789012345678>">
                   <button class="btn btn-add-banned" id="btn-add-discord-user">Add User</button>
                 </div>
               </div>

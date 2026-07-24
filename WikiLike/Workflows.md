@@ -56,7 +56,7 @@ For commands marked as high-risk or requiring confirmation:
 To monitor the performance of the local host:
 
 1. **Cron Interval**:
-   - A `setInterval` loop in [server.js](file:///d:/ai/aiAgentLocal/server.js) runs every **3 seconds**.
+   - A `setInterval` loop in [server.js](file:///d:/!localAiAgent/aiAgentLocal/server.js) runs every **3 seconds**.
 2. **Metrics Fetching**:
    - Pulls RAM states using standard `os` libraries:
      - Total RAM, free RAM, and calculated used RAM percentages.

@@ -30,7 +30,7 @@ function writeEnv(envObj) {
   content += `# Discord Bot Token\nDISCORD_TOKEN=${envObj.DISCORD_TOKEN || ''}\n\n`;
   content += `# Local Web Dashboard Port\nPORT=${envObj.PORT || '3000'}\n\n`;
   content += `# Discord Founder ID\nFOUNDER_DISCORD_ID=${envObj.FOUNDER_DISCORD_ID || ''}\n\n`;
-  content += `# Web Dashboard Founder key\nFOUNDER_KEY=${envObj.FOUNDER_KEY || '1907'}\n`;
+  content += `# Web Dashboard Founder key\nFOUNDER_KEY=${envObj.FOUNDER_KEY || ''}\n`;
   fs.writeFileSync(envPath, content, 'utf-8');
 }
 

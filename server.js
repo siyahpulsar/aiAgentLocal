@@ -5,6 +5,7 @@ const WebSocket = require('ws');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
+const { spawn } = require('child_process');
 const discordBot = require('./src/discord/index.js');
 const { initWss, config } = require('./src/state');
 const { loadSecurityRules } = require('./src/security');
@@ -26,6 +27,21 @@ initWss(wss);
 
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
+
+app.post('/api/open-ide', (req, res) => {
+  const clientIp = req.socket.remoteAddress;
+  if (clientIp === '127.0.0.1' || clientIp === '::1' || clientIp === '::ffff:127.0.0.1') {
+    const child = spawn(/^win/.test(process.platform) ? 'npm.cmd' : 'npm', ['run', 'start:ide'], {
+      detached: true,
+      stdio: 'ignore',
+      shell: true
+    });
+    child.unref();
+    res.json({ success: true, message: 'IDE opened' });
+  } else {
+    res.status(403).json({ success: false, message: 'Forbidden: Localhost only' });
+  }
+});
 
 loadSecurityRules();
 

@@ -4,6 +4,20 @@ node_modules/
 # Environment configurations
 .env
 
+# Configuration files containing IDs, customized rules, or keys
+config/kurucu.json
+config/config.json
+config/permissions.json
+
+# Local temp directories & cache
+bin/
+scratch/*
+!scratch/.gitkeep
+user_profiles/*
+!user_profiles/.gitkeep
+library/*
+!library/.gitkeep
+
 # System & log files
 *.log
 *.webm

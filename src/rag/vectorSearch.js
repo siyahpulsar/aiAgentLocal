@@ -13,7 +13,7 @@ async function getEmbedding(text, lmStudioUrl) {
     }, { timeout: 5000 });
     return response.data.data[0].embedding;
   } catch (error) {
-    console.error("Failed to fetch embedding from LM Studio:", error.message);
+    console.warn("[VECTOR SEARCH] Embedding unavailable (falling back to TF-IDF):", error.message);
     return null;
   }
 }

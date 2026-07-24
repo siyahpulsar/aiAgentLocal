@@ -23,7 +23,26 @@ const agentState = {
 
 let canAnalyzeImages = null; // null: unchecked, true: vision enabled, false: vision disabled
 
+const createdFoldersPath = path.join(__dirname, '..', 'config', 'created_folders.json');
 const createdFolders = new Set(); // Stores absolute lowercase paths of folders created by the bot
+try {
+  if (fs.existsSync(createdFoldersPath)) {
+    const data = JSON.parse(fs.readFileSync(createdFoldersPath, 'utf-8'));
+    if (Array.isArray(data)) {
+      data.forEach(p => createdFolders.add(p));
+    }
+  }
+} catch (e) {
+  console.error('Failed to load created_folders.json:', e);
+}
+
+function saveCreatedFolders() {
+  try {
+    fs.writeFileSync(createdFoldersPath, JSON.stringify(Array.from(createdFolders), null, 2), 'utf-8');
+  } catch (e) {
+    console.error('Failed to save created_folders.json:', e);
+  }
+}
 
 let config = {
   lmStudioUrl: 'http://127.0.0.1:1234/v1',
@@ -51,7 +70,9 @@ let config = {
     'stop-service', 'rm -rf', 'rm -r', 'mkfs', 'dd ',
     'net user', 'net localgroup', 'reg delete', 'set-executionpolicy',
     'attrib -r', 'attrib -h', 'cipher'
-  ]
+  ],
+  simbaEnabled: false,
+  memoryLimit: 1000
 };
 
 try {
@@ -59,10 +80,12 @@ try {
   if (fs.existsSync(configPath)) {
     const data = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
     const conf = Array.isArray(data) ? data[0] : data;
-    if (conf) {
-      if (conf.forceTaskPlan !== undefined) config.forceTaskPlan = conf.forceTaskPlan;
-      // Copy other existing values if needed, but since wsHandler merges via Object.assign, this is enough for startup
-    }
+      if (conf) {
+        if (conf.forceTaskPlan !== undefined) config.forceTaskPlan = conf.forceTaskPlan;
+        if (conf.simbaEnabled !== undefined) config.simbaEnabled = conf.simbaEnabled;
+        if (conf.memoryLimit !== undefined) config.memoryLimit = conf.memoryLimit;
+        // Copy other existing values if needed, but since wsHandler merges via Object.assign, this is enough for startup
+      }
   }
 } catch (e) {
   console.error('Failed to load config.json:', e);
@@ -221,6 +244,7 @@ module.exports = {
   getCanAnalyzeImages: () => canAnalyzeImages,
   setCanAnalyzeImages: (val) => { canAnalyzeImages = val; },
   createdFolders,
+  saveCreatedFolders,
   initWss,
   broadcastState,
   broadcastTerminal,

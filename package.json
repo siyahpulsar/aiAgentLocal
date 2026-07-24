@@ -4,7 +4,8 @@
   "description": "Local AI Agent that connects to LM Studio and controls the computer with strict user approvals",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "start:ide": "electron electron/main.js"
   },
   "dependencies": {
     "@discordjs/voice": "^0.17.0",
@@ -19,5 +20,8 @@
     "puppeteer": "^25.2.1",
     "ws": "^8.16.0"
   },
-  "private": true
+  "private": true,
+  "devDependencies": {
+    "electron": "^43.2.0"
+  }
 }

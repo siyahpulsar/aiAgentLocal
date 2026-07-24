@@ -1,12 +1,23 @@
 const fs = require('fs');
 const path = require('path');
-const { agentState, config, createdFolders, broadcastTerminal } = require('./state');
+const { agentState, config, createdFolders, saveCreatedFolders, broadcastTerminal } = require('./state');
 
 let securityRules = {
   bannedWords: [],
   bannedWebsites: [],
   allowedBaseFolders: []
 };
+
+// When set to a path, agent has full read/write access to that directory (IDE workspace mode)
+let ideWorkspacePath = null;
+
+function setIdeWorkspace(absPath) {
+  ideWorkspacePath = absPath ? path.resolve(absPath) : null;
+}
+
+function getIdeWorkspace() {
+  return ideWorkspacePath;
+}
 
 function loadSecurityRules() {
   try {
@@ -23,7 +34,8 @@ function loadSecurityRules() {
     console.error("[ERROR] Failed to load security rules:", e);
   }
 }
-loadSecurityRules();
+// Note: loadSecurityRules() is called once from server.js on startup.
+// Do NOT call it here automatically to prevent double-loading.
 
 // Watch security_rules.json for dynamic updates
 try {
@@ -120,16 +132,32 @@ function checkBannedWebsites(target) {
 // Helper to check if file path access is allowed and register newly created folders
 function checkAndRegisterPath(filePath, isWrite = false) {
   if (!filePath) return false;
-  const rootDir = path.resolve(agentState.cwd).toLowerCase();
+
+  const cwdResolved = path.resolve(agentState.cwd);
   let targetPath;
   try {
-    targetPath = fs.realpathSync(path.resolve(agentState.cwd, filePath)).toLowerCase();
+    targetPath = fs.realpathSync(path.resolve(cwdResolved, filePath));
   } catch (err) {
-    targetPath = path.resolve(agentState.cwd, filePath).toLowerCase();
+    targetPath = path.resolve(cwdResolved, filePath);
   }
 
+  // === IDE WORKSPACE MODE ===
+  // If an IDE workspace is set and target is inside it → full access
+  if (ideWorkspacePath) {
+    const relToWorkspace = path.relative(ideWorkspacePath, targetPath);
+    if (!relToWorkspace.startsWith('..') && !path.isAbsolute(relToWorkspace)) {
+      return true; // Full access inside IDE workspace
+    }
+    // Block access outside the IDE workspace
+    return false;
+  }
+
+  // === DEFAULT SANDBOX MODE (original behavior) ===
+  const rootDir = cwdResolved.toLowerCase();
+  const targetLower = targetPath.toLowerCase();
+
   // If path is outside the root directory, block it
-  const relative = path.relative(rootDir, targetPath);
+  const relative = path.relative(rootDir, targetLower);
   if (relative.startsWith('..') || path.isAbsolute(relative)) {
     return false;
   }
@@ -137,33 +165,28 @@ function checkAndRegisterPath(filePath, isWrite = false) {
   // Split relative path into parts
   const parts = relative.split(path.sep).filter(p => p.length > 0);
   if (parts.length === 0) {
-    return !isWrite; // Root directory is read-only, no write directly to root path
+    return !isWrite; // Root directory: read-only
   }
 
   const topLevel = parts[0];
 
   // Whitelisted base folders from security rules
   const allowedBases = (securityRules.allowedBaseFolders || []).map(f => f.toLowerCase());
-
-  if (allowedBases.includes(topLevel)) {
-    return true;
-  }
+  if (allowedBases.includes(topLevel)) return true;
 
   const topLevelPath = path.join(rootDir, topLevel);
 
   // If it's a folder/file created by the bot in this session
-  if (createdFolders.has(topLevelPath)) {
-    return true;
-  }
+  if (createdFolders.has(topLevelPath)) return true;
 
-  // If it doesn't exist on disk yet and we are writing, we allow creation and track it
+  // If it doesn't exist on disk yet and we are writing, allow creation and track it
   if (isWrite && !fs.existsSync(topLevelPath)) {
     createdFolders.add(topLevelPath);
+    saveCreatedFolders();
     console.log(`[SECURITY] Bot created new top-level folder/file and registered access: ${topLevelPath}`);
     return true;
   }
 
-  // Otherwise, it's an existing folder/file that wasn't created by the bot (blocked)
   return false;
 }
 
@@ -221,5 +244,8 @@ module.exports = {
   checkBannedWords,
   checkBannedWebsites,
   checkAndRegisterPath,
-  assessActionRisk
+  assessActionRisk,
+  setIdeWorkspace,
+  getIdeWorkspace
 };
+

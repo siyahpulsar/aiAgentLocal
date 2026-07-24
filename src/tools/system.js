@@ -44,6 +44,9 @@ function captureScreenshot() {
 }
 
 // Safe shell command runner with real-time log streaming
+// Timeout: 10 minutes (600,000ms) — prevents infinite hangs on long-running commands
+const COMMAND_TIMEOUT_MS = 10 * 60 * 1000;
+
 function runShellCommand(commandString) {
   return new Promise((resolve) => {
     broadcastTerminal(`\n> [EXECUTE] ${commandString}\n`);
@@ -60,6 +63,18 @@ function runShellCommand(commandString) {
 
     agentState.activeCommandProcess = child;
 
+    // Auto-kill after COMMAND_TIMEOUT_MS to prevent infinite hangs
+    const timeoutHandle = setTimeout(() => {
+      broadcastTerminal(`\n> [TIMEOUT] Command exceeded ${COMMAND_TIMEOUT_MS / 60000} minute limit. Force killing...\n`);
+      child.kill('SIGKILL');
+      agentState.activeCommandProcess = null;
+      resolve({
+        success: false,
+        exitCode: -1,
+        message: `Command timed out after ${COMMAND_TIMEOUT_MS / 60000} minutes and was force-killed.`
+      });
+    }, COMMAND_TIMEOUT_MS);
+
     child.stdout.on('data', (data) => {
       const text = data.toString();
       broadcastTerminal(text);
@@ -71,6 +86,7 @@ function runShellCommand(commandString) {
     });
 
     child.on('close', (code) => {
+      clearTimeout(timeoutHandle);
       agentState.activeCommandProcess = null;
       broadcastTerminal(`\n> [FINISHED] Command exited with code ${code}\n`);
       resolve({
@@ -81,6 +97,7 @@ function runShellCommand(commandString) {
     });
 
     child.on('error', (err) => {
+      clearTimeout(timeoutHandle);
       agentState.activeCommandProcess = null;
       broadcastTerminal(`\n> [FAILED] Start failed: ${err.message}\n`);
       resolve({

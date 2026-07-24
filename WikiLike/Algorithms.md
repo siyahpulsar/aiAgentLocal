@@ -6,7 +6,7 @@ This document explains the algorithms, loops, and mathematical logic used in the
 
 ## 1. Core Agent Execution Loop (`runAgentLoop`)
 
-The main logic in [agent.js](file:///d:/ai/aiAgentLocal/src/agent.js) implements a multi-step execution loop that repeatedly invokes the local LLM until the goal is achieved or max steps are reached.
+The main logic in [agent.js](file:///d:/!localAiAgent/aiAgentLocal/src/agent.js) implements a multi-step execution loop that repeatedly invokes the local LLM until the goal is achieved or max steps are reached.
 
 ```mermaid
 graph TD
@@ -48,7 +48,7 @@ To prevent models from spinning endlessly on failing commands, the loop tracks t
 
 ## 2. RAG Vector Memory Similarity
 
-The memory module in [memory.js](file:///d:/ai/aiAgentLocal/src/memory.js) searches `config/memory.json` using vectorized search.
+The memory module in [memory.js](file:///d:/!localAiAgent/aiAgentLocal/src/memory.js) searches `config/memory.json` using vectorized search.
 
 ### Cosine Similarity Formula
 The RAG system calculates cosine similarity between the query embedding vector ($\vec{A}$) and each memory embedding vector ($\vec{B}$):

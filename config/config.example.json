@@ -1,0 +1,11 @@
+[
+  {
+    "admins": [],
+    "connectionSpeedLimit": 0.7,
+    "founderKey": "your_secret_key_here",
+    "lpmMode": false,
+    "lpmBatchSize": 1,
+    "lpmOmMode": false,
+    "forceTaskPlan": false
+  }
+]

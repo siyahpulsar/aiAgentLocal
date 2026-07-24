@@ -136,7 +136,7 @@ Client                      Server
   ├─────── ws connect ───────►│
   │                           ├─ (Starts 5s Auth Timeout)
   ├─────── type: 'auth' ─────►│
-  │   key: "well well well..."├─ (Validates key)
+  │        key: "1907"        ├─ (Validates key)
   │◄────── type: 'auth_success'┤
   │                           │
   │◄────── initial states ────┤ (Sends state, settings, metrics)

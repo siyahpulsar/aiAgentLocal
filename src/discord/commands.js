@@ -68,6 +68,9 @@ async function handleCommand(message, command, args) {
         { name: '!queue', value: 'Müzik sırasını listeler.' },
         { name: '!library clean/autoclean/delete', value: 'Kütüphane yönetimi (Sadece Adminler).' },
         { name: '!forcetaskplan', value: 'Agent in zorunlu task listesi planı modunu açar/kapatır (Sadece Adminler).' },
+        { name: '!lpm', value: 'Low Parameter Mode (LPM) modunu açar/kapatır (Sadece Adminler).' },
+        { name: '!simba', value: 'SiMBA (Searched Memory By AI) modunu açar/kapatır (Sadece Adminler).' },
+        { name: '!memorylimit <sayı>', value: 'Maksimum hafıza (memory) sınırını ayarlar (Sadece Adminler).' },
         { name: '!perm', value: 'Yetkilendirme komutu (Kullanımdan kaldırıldı, siteye yönlendirir).' }
       );
     message.reply({ embeds: [embed] });
@@ -93,6 +96,86 @@ async function handleCommand(message, command, args) {
       fs.writeFileSync(configPath, JSON.stringify([data], null, 2), 'utf-8');
       
       message.reply(`✅ Zorunlu Task Planı modu **${config.forceTaskPlan ? "AÇILDI" : "KAPATILDI"}**.\nAgent bundan sonra her görev için önce 'task_plan' aracı ile plan oluşturmak ${config.forceTaskPlan ? "zorundadır" : "zorunda değildir"}.`);
+    } catch (e) {
+      message.reply(`❌ Ayar kaydedilirken hata oluştu: ${e.message}`);
+    }
+    return;
+  }
+
+  if (command === 'lpm') {
+    if (!isAdmin(message.author.id)) {
+      message.reply("❌ Bu komutu sadece adminler kullanabilir.");
+      return;
+    }
+    config.lpmMode = !config.lpmMode;
+    
+    try {
+      const configPath = path.join(__dirname, '../../config', 'config.json');
+      let data = {};
+      if (fs.existsSync(configPath)) {
+        const raw = fs.readFileSync(configPath, 'utf-8');
+        const parsed = JSON.parse(raw);
+        data = Array.isArray(parsed) ? parsed[0] : parsed;
+      }
+      data.lpmMode = config.lpmMode;
+      fs.writeFileSync(configPath, JSON.stringify([data], null, 2), 'utf-8');
+      
+      message.reply(`✅ LPM (Low Parameter Mode) **${config.lpmMode ? "AÇILDI" : "KAPATILDI"}**.\nAgent bundan sonra küçük modellere uygun tekli tool sorgulama modunda ${config.lpmMode ? "çalışacaktır" : "çalışmayacaktır"}.`);
+    } catch (e) {
+      message.reply(`❌ Ayar kaydedilirken hata oluştu: ${e.message}`);
+    }
+    return;
+  }
+
+  if (command === 'simba') {
+    if (!isAdmin(message.author.id)) {
+      message.reply("❌ Bu komutu sadece adminler kullanabilir.");
+      return;
+    }
+    config.simbaEnabled = !config.simbaEnabled;
+    
+    try {
+      const configPath = path.join(__dirname, '../../config', 'config.json');
+      let data = {};
+      if (fs.existsSync(configPath)) {
+        const raw = fs.readFileSync(configPath, 'utf-8');
+        const parsed = JSON.parse(raw);
+        data = Array.isArray(parsed) ? parsed[0] : parsed;
+      }
+      data.simbaEnabled = config.simbaEnabled;
+      fs.writeFileSync(configPath, JSON.stringify([data], null, 2), 'utf-8');
+      
+      message.reply(`✅ SiMBA (Searched Memory By AI) **${config.simbaEnabled ? "AÇILDI" : "KAPATILDI"}**.\nAgent bundan sonra geçmiş görevleri araştırırken ${config.simbaEnabled ? "LLM tabanlı SiMBA kullanacaktır" : "standart Vector/Keyword Search kullanacaktır"}.`);
+    } catch (e) {
+      message.reply(`❌ Ayar kaydedilirken hata oluştu: ${e.message}`);
+    }
+    return;
+  }
+
+  if (command === 'memorylimit') {
+    if (!isAdmin(message.author.id)) {
+      message.reply("❌ Bu komutu sadece adminler kullanabilir.");
+      return;
+    }
+    if (args.length === 0 || isNaN(parseInt(args[0], 10))) {
+      message.reply(`Hafıza sınırı belirtin. Örnek: \`!memorylimit 1000\` (Şu anki sınır: ${config.memoryLimit || 1000})`);
+      return;
+    }
+    
+    config.memoryLimit = parseInt(args[0], 10);
+    
+    try {
+      const configPath = path.join(__dirname, '../../config', 'config.json');
+      let data = {};
+      if (fs.existsSync(configPath)) {
+        const raw = fs.readFileSync(configPath, 'utf-8');
+        const parsed = JSON.parse(raw);
+        data = Array.isArray(parsed) ? parsed[0] : parsed;
+      }
+      data.memoryLimit = config.memoryLimit;
+      fs.writeFileSync(configPath, JSON.stringify([data], null, 2), 'utf-8');
+      
+      message.reply(`✅ Maksimum hafıza sınırı **${config.memoryLimit}** olarak güncellendi.`);
     } catch (e) {
       message.reply(`❌ Ayar kaydedilirken hata oluştu: ${e.message}`);
     }
@@ -162,7 +245,7 @@ async function handleCommand(message, command, args) {
       message.reply(`📥 Şarkı kütüphanede bulunamadı, indiriliyor...`);
       try {
         const ytdlp = await ensureYtdlp();
-        const safeQuery = query.replace(/"/g, '\\"');
+        const safeQuery = query.replace(/["'`$\\&|<>\r\n(){};]/g, '').trim();
         const outputFilename = `download_${Date.now()}.mp3`;
         const outputPath = path.join(LIBRARY_DIR, outputFilename);
         const speedLimitArg = `--limit-rate ${Math.round(state.discordState.connectionSpeedLimit * 1024 * 1024)}`;
@@ -191,10 +274,12 @@ async function handleCommand(message, command, args) {
     playNext(message);
   }
   else if (command === 'pause') {
+    if (!state.audioPlayer) { message.reply("❌ Müzik çalar aktif değil."); return; }
     state.audioPlayer.pause();
     message.reply("⏸️ Müzik duraklatıldı.");
   }
   else if (command === 'resume') {
+    if (!state.audioPlayer) { message.reply("❌ Müzik çalar aktif değil."); return; }
     state.audioPlayer.unpause();
     message.reply("▶️ Müzik devam ettiriliyor.");
   }
@@ -226,7 +311,13 @@ async function handleCommand(message, command, args) {
       runLibraryAutoclean();
       message.reply("🧹 Kütüphane temizlendi.");
     } else if (sub === 'delete') {
-      const fileToDelete = args.slice(1).join(' ');
+      const rawInput = args.slice(1).join(' ');
+      // SECURITY FIX: Use only the filename (basename) to prevent path traversal attacks
+      const fileToDelete = path.basename(rawInput);
+      if (!fileToDelete) {
+        message.reply("❌ Geçersiz dosya adı.");
+        return;
+      }
       const filePath = path.join(LIBRARY_DIR, fileToDelete);
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);

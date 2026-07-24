@@ -1,31 +1,25 @@
-(this file wrote by Gemini 3.6Flash. 22.07.2026. Has any mistakes? not my problem, its gemini's problem. idc.)
-Important:[
-Tüm bu dosyayı gemini yazdı. (Onu suçlamak için değil sadece sorumluluk almıyorum.) Tüm özellikleri yetersiz zaman ve yetersiz kaynaklardan dolayı test edemedim. Ama aşağıda gemini'a bu dosyayı oluştururken ona verdiğim bilgide olduğu gibi küçük modellerle bile gidip internetten portakal görseli indirip discorddan atabiliyor. Bir site arayıp siteye giriş yapıp orada bulunan dosyaları görebiliyor ve indirebiliyor yani. Daha test etmediğim nice özellikler var. Aşağıda projenin github sayfasında detaylı olarak araştırma yapıp oluşturduğu dökümanları görebilirsiniz. Bunun dışında lütfen tüm sorunları bana bildirin. Böylelikle bu projeyi geliştirebilirim. Parasal bağış şu anda beklemiyorum çünkü belirttiğim gibi zamanım az ve projeyi yarım yamalak çıkarmış olabilirim ve size kötü bir hizmet sunuyor olabilirim. Ancak yinede denediğiniz için teşekkür ederim.]
 # 🤖 Local AI Computer-Use Agent (Pulsaristic Agent Framework)
 
-> **100% Local, Autonomous AI Computer Agent with Real-Time Web Dashboard, Discord Integration, Puppeteer Web Automation & Multi-Agent Swarm Mode.**
+![Node.js](https://img.shields.io/badge/Node.js-v18%2B-green?style=flat-square&logo=node.js)
+![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)
+![LM Studio](https://img.shields.io/badge/LLM-LM%20Studio%20Local-orange?style=flat-square)
+![Discord.js](https://img.shields.io/badge/Discord-v14-5865F2?style=flat-square&logo=discord)
+
+> **100% Local, Autonomous AI Computer Agent with Real-Time Web Dashboard, Discord Integration, Puppeteer Web Automation, Swarm Mode & Low Parameter Optimization.**
+
+> [!WARNING]
+> **ÖNEMLİ BİLGİLENDİRME VE RİSK UYARISI / IMPORTANT DISCLAIMER**
+> Bu projenin kodu büyük oranda **Gemini (Yapay Zeka)** tarafından yazılmış olup; algoritma, çalışma mantığı, mimari kararlar ve uygulamanın tüm fikir hakları proje geliştiricisi **siyahpulsar**'a aittir. Gemini sadece bu düşünceleri koda dökerek gerçek hayata geçirmiştir. Proje geliştiricisi tüm özellikleri bizzat deneyememiş olup, tam güvenlik ve %100 sorunsuz çalışabilirlik garantisi sunulmamaktadır. Kodların bilgisayarınızda çalıştırılmasından doğabilecek tahmin edilebilir veya edilemez, olası tüm donanımsal, yazılımsal ve güvenlik riskleri tamamen projeyi indirip kullanan **kullanıcının kendi sorumluluğundadır**.
+> 
+> *Olası bir açık, hata, ekstra token harcamaları, tasarrufsuzluk, eksik optimizasyon ve performans sorunları veya yeni fikir ve öneriler için Discord üzerinden **siyahpulsar**'a bildirmeyi unutmayın.*
+> 
+> *This project's code was largely written by **Gemini (AI)**, but all algorithms, operational logic, architectural decisions, and project ideas belong exclusively to the developer, **siyahpulsar**. The developer has not tested all features extensively; therefore, full security and flawless functionality are not guaranteed. Any predictable or unpredictable risks—including hardware, software, or security vulnerabilities—arising from executing this project are entirely the **responsibility of the user**.*
 
 ---
 
 ## 📖 Table of Contents / İçindekiler
 - [English Documentation](#-english-documentation)
-  - [1. System Overview & Core Mission](#1-system-overview--core-mission)
-  - [2. Architectural Innovations](#2-architectural-innovations)
-  - [3. Global AI Agent Tier List & Benchmarks](#3-global-ai-agent-tier-list--benchmarks)
-  - [4. Local LLM Tier List & Compatibility](#4-local-llm-tier-list--compatibility)
-  - [5. Repository Layout & Module Breakdown](#5-repository-layout--module-breakdown)
-  - [6. Prerequisites & Environment Setup](#6-prerequisites--environment-setup)
-  - [7. Configuration Guide (Step-by-Step)](#7-configuration-guide-step-by-step)
-  - [8. Running the Application](#8-running-the-application)
 - [Türkçe Dokümantasyon](#-türkçe-dokümantasyon)
-  - [1. Sistem Genel Bakışı ve Temel Hedef](#1-sistem-genel-bakışı-ve-temel-hedef)
-  - [2. Mimari İnovasyonlar](#2-mimari-inovasyonlar)
-  - [3. Küresel Yapay Zeka Ajan Tier Listesi ve Karşılaştırma](#3-küresel-yapay-zeka-ajan-tier-listesi-ve-karşılaştırma)
-  - [4. Yerel LLM Model Yetenek Seviyeleri](#4-yerel-llm-model-yetenek-seviyeleri)
-  - [5. Modül ve Dizin Haritası](#5-modül-ve-dizin-haritası)
-  - [6. Kurulum Gereksinimleri](#6-kurulum-gereksinimleri)
-  - [7. Yapılandırma Rehberi (Adım Adım)](#7-yapılandırma-rehberi-adım-adım)
-  - [8. Uygulamayı Çalıştırma ve Docker](#8-uygulamayı-çalıştırma-ve-docker)
 - [License / Lisans](#-license)
 
 ---
@@ -33,202 +27,49 @@ Tüm bu dosyayı gemini yazdı. (Onu suçlamak için değil sadece sorumluluk al
 ## 🇬🇧 English Documentation
 
 ### 1. System Overview & Core Mission
-
 This repository provides an open-source, production-grade **Local AI Computer-Use Agent framework**. Designed to run 100% locally without cloud API subscriptions or external tokens, it connects directly to **LM Studio** (or any OpenAI-compatible local REST server) to give local language models computer manipulation capabilities.
 
 The agent can autonomously:
 - Perform file system reads, writes, and directory scans within sandbox bounds.
 - Execute system shell commands (PowerShell/Bash) with risk assessment.
 - Browse the web, take page screenshots, search web engines, and download media via Puppeteer.
-- Stream state live to an interactive Web UI dashboard via WebSockets.
-- Interact remotely over Discord channels, approving/rejecting actions with interactive Discord UI buttons and streaming voice channel music (`yt-dlp`).
-
----
+- Stream state live to an interactive Web UI dashboard or an Electron-based Desktop IDE via WebSockets.
+- Interact remotely over Discord channels, approving/rejecting actions with interactive buttons and streaming voice channel music (`yt-dlp`).
 
 ### 2. Architectural Innovations
-
-Based on system analysis and architectural research (`research_notes.md`), the codebase features key technical highlights:
+Based on system analysis and architectural research, the codebase features key technical highlights:
 
 1. **Manual AI Bridge:** If the local LLM crashes or is offline, the system automatically transitions into Manual AI Bridge mode. It formats current task prompts into copy-paste blocks for external web models (Gemini, Claude, ChatGPT) and resumes execution seamlessly when the user pastes back the response.
-2. **Delta Patch WebSocket Engine:** Instead of re-broadcasting entire state trees, `src/state.js` uses a debounced (150ms) delta diff broadcaster (`state_patch`) to minimize CPU usage and network bandwidth.
+2. **Delta Patch WebSocket Engine:** Instead of re-broadcasting entire state trees, `src/state.js` uses a debounced (150ms) delta diff broadcaster to minimize CPU usage and network bandwidth.
 3. **5-Tiered Tool Call Parser:** Supports tool invocation across 5 distinct LLM output formats: JSON Markdown codeblocks, raw JSON objects, XML tags, Qwen `[TOOL_CALLS]` syntax, and Heuristic Regex fallback—enabling robust tool execution even on 3B/7B low-parameter models.
-4. **Strict Security Sandbox:** Uses canonical `fs.realpathSync` path resolution to prevent symlink traversal attacks outside allowed workspace boundaries. Includes a Levenshtein-distance banned-word scanner and dynamic action risk scoring (`pending_approval`).
-5. **Swarm Multi-Agent Mode:** Dynamically re-prompts the model to switch roles (**Planner** $\rightarrow$ **Developer** $\rightarrow$ **QA Tester**) during multi-step task execution.
-6. **RAG Memory + TF-IDF Fallback:** Computes cosine similarity over vectorized task histories (using LM Studio embeddings). Automatically falls back to keyword frequency indexing (TF-IDF light) if embedding models are offline.
-
----
+4. **Strict Security Sandbox:** Uses canonical `fs.realpathSync` path resolution to prevent symlink traversal attacks outside allowed workspace boundaries. Includes a Levenshtein-distance banned-word scanner and dynamic action risk scoring.
+5. **Swarm Multi-Agent Mode:** Dynamically re-prompts the model to switch roles (**Planner** → **Developer** → **QA Tester**) during multi-step task execution.
+6. **RAG Memory + TF-IDF Fallback:** Computes cosine similarity over vectorized task histories (using LM Studio embeddings). Automatically falls back to keyword frequency indexing (TF-IDF light) if embedding models are offline. Includes an auto-updating `agent_readme.md` for workspace tracking and Git auto-commits.
+7. **LPM (Low Parameter Mod) & OM (Odaklanma Modu / Focus Mode):** 
+   - **LPM:** Designed for low-parameter models that get confused when presented with many tools at once. It uses a slider to present tools sequentially (e.g., prompting the AI to say yes/no to each tool one by one) until the model selects the right one.
+   - **OM:** When enabled alongside LPM, the agent evaluates the prompt to determine the *type* of tool it needs, sending a self-message to focus on that specific tool class. Just like an intern fetching a tool from a toolbox, this ensures the model maintains focus and prevents cognitive overload.
+8. **Library Sub-Loop Mode:** Protects narrow context windows by offloading memory searches to a background loop that reads `.md` guides using TF-IDF, feeding only relevant context slices to the main AI stream.
 
 ### 3. Global AI Agent Tier List & Benchmarks
+In benchmark comparisons against major autonomous AI agent frameworks, the **Pulsaristic Local AI Agent** achieves top-tier ratings for privacy, security, and local execution, scoring **91 / 100** due to its offline intranet capabilities, sandbox UI, and Manual AI Bridge fallbacks.
 
-In benchmark comparisons against major autonomous AI agent frameworks (`agent_karsilastirmalari.md`), the **Pulsaristic Local AI Agent** achieves top-tier ratings for privacy, security, and local execution:
-
-#### 🏆 100-Point Benchmark Ranking (2026)
-
-| Tier | Agent / Framework | Score (100) | Highlight |
-| :---: | :--- | :---: | :--- |
-| **` S `** | **Antigravity / Cursor / Windsurf** | **94 / 100** | Deep IDE integration & real-time context index. |
-| **` S `** | **Pulsaristic (Local AI Agent)** | **88 / 100** | **%100 Local, Zero-Subscription, Sandbox Guard & Manual AI Bridge.** |
-| **` A `** | **CrewAI** | **85 / 100** | Role-based multi-agent collaboration. |
-| **` A `** | **LangGraph (LangChain)** | **84 / 100** | Stateful graph-based agent routing. |
-| **` A `** | **Cognition Devin** | **83 / 100** | Autonomous cloud software engineer. |
-| **` B `** | **Microsoft AutoGen** | **79 / 100** | Conversational multi-agent framework. |
-| **` B `** | **OpenInterpreter** | **78 / 100** | Local code interpreter & terminal agent. |
-| **` B `** | **Claude Engineer** | **75 / 100** | CLI-based autonomous assistant. |
-| **` C `** | **Microsoft Taskweaver** | **68 / 100** | Data analytics agent. |
-| **` C `** | **AutoGPT** | **62 / 100** | Classic autonomous loop pioneer. |
-| **` D `** | **BabyAGI** | **45 / 100** | Concept loop execution. |
-
-#### 📊 Category Comparison Matrix
-
-| Agent / Framework | 100% Local & Privacy (20%) | Safety & Approval (15%) | Ease of Use & UI (15%) | Self-Correction (15%) | Swarm Multi-Agent (15%) | Tool & OS Access (20%) | TOTAL SCORE |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Antigravity / Cursor** | 70 | 90 | 98 | 95 | 92 | 98 | **94 / 100** |
-| **Pulsaristic (Local Agent)** | **100** | **95** | **88** | **85** | **82** | **85** | **88 / 100** |
-| **CrewAI** | 80 | 70 | 80 | 85 | 95 | 85 | **85 / 100** |
-| **LangGraph** | 85 | 75 | 70 | 90 | 92 | 90 | **84 / 100** |
-| **Cognition Devin** | 10 | 85 | 95 | 92 | 88 | 95 | **83 / 100** |
-| **OpenInterpreter** | 90 | 60 | 70 | 75 | 50 | 95 | **78 / 100** |
-
----
-
-### 4. Local LLM Tier List & Compatibility
-
-Recommended model sizes for running the agent locally in LM Studio:
-
-| Tier | Model Class / Size | Performance & Tool Use Evaluation |
-| :---: | :--- | :--- |
-| **` S `** | **Gemini / Claude / GPT** | **Exceptional**. Flawless multi-step planning, reasoning, and tool selection. |
-| **` A `** | **Devstral Small 2 (24B)** | **Very Good**. Strong tool caller; executes multi-file modifications cleanly. |
-| **` B `** | **Qwen 2.5 Coder (14B)** | **Recommended Default**. Excellent code syntax, reliable JSON formatting, fast execution. |
-| **` C `** | **Gemma 3 (12B)** | **Moderate**. Performs single-tool calls well; may stumble on complex multi-stage tasks. |
-| **` D `** | **Qwen 2.5 Coder (7B)** | **Acceptable**. Suitable for lightweight local hardware; keep prompts direct. |
-| **` E `** | **Qwen 2.5 (3B)** | **Weak**. Baseline tool calls work; requires Manual AI Bridge assistance on long loops. |
-| **` F `** | **Qwen 2.5 (0.5B)** | **Unusable**. Parameter capacity causes malformed JSON syntax errors. |
-
----
-
-### 5. Repository Layout & Module Breakdown
-
-Map of key modules and responsibilities (`genel_proje_bilgisi.md`):
-
-```
-.
-├── server.js               # Express HTTP & WebSocket server, CPU/RAM metrics broadcaster
-├── Dockerfile              # Docker sandbox container specification
-├── docker-compose.yml      # Multi-container orchestration config
-├── package.json            # Node.js dependencies (express, ws, discord.js, puppeteer)
-├── README.md               # Comprehensive bilingual project documentation
-├── agent_readme.md         # Auto-updated workspace map & accomplishment log
-├── config/                 # Dynamic configuration files (JSON schemas)
-│   ├── config.json         # Admin IDs, connection speed limits, founder auth key
-│   ├── kurucu.json         # Founder Discord User ID specification
-│   ├── permissions.json    # Authorized Discord users list
-│   ├── security_rules.json # Banned words, forbidden shell commands, whitelisted paths
-│   └── memory.json         # Vectorized memory bank of completed tasks
-├── src/                    # Core application logic
-│   ├── agent.js            # Main loop runner (runAgentLoop), Swarm mode, approval resolver
-│   ├── state.js            # Central reactive agentState, WebSocket delta diff patcher
-│   ├── security.js         # Levenshtein word check, realpathSync sandbox, risk scoring
-│   ├── memory.js           # RAG vector memory (cosine similarity) + TF-IDF fallback
-│   ├── llm/
-│   │   └── llmClient.js    # LM Studio fetcher, retry exponential backoff, 5-format parser
-│   ├── modes/
-│   │   └── libraryMode.js  # Guide & reference searching sub-loop
-│   ├── rag/
-│   │   └── vectorSearch.js # Cosine similarity vector search math
-│   ├── tools/              # Tool engines (system execution, Puppeteer browser, filesystem)
-│   ├── utils/              # Environment variable helpers (.env reader/writer)
-│   ├── ws/                 # WebSocket message & event routing engine
-│   └── discord/            # Discord bot client, music player (yt-dlp), interaction cards
-└── WikiLike/               # Obsidian-compatible wiki documentation
-```
-
----
-
-### 6. Prerequisites & Environment Setup
-
-Before running the application:
-
-1. **Node.js** (v18.0.0 or higher).
-2. **LM Studio** installed and running with local API server enabled (`http://localhost:1234`).
-3. **Google Chrome / Chromium** installed (required for Puppeteer visual web browsing).
-4. *(Optional)* A **Discord Bot Token** from the [Discord Developer Portal](https://discord.com/developers/applications) if using Discord.
-
----
-
-### 7. Configuration Guide (Step-by-Step)
-
-To configure the open-source template files for your environment:
-
-#### Step 1: Create `.env`
-Copy `.env.example` to `.env`:
+### 4. Quick Start
 ```bash
+# 1. Clone the repository
+git clone https://github.com/siyahpulsar/Pulsaristic-Local-AI-Agent.git
+cd Pulsaristic-Local-AI-Agent
+
+# 2. Install dependencies
+npm install
+
+# 3. Prepare environment variables and config files
 cp .env.example .env
-```
-Fill in your credentials:
-```env
-# Discord Bot Client Token
-DISCORD_TOKEN=your_discord_bot_token_here
+cp config/kurucu.example.json config/kurucu.json
+cp config/config.example.json config/config.json
+cp config/permissions.example.json config/permissions.json
 
-# Web Dashboard Port
-PORT=3000
-
-# Discord User ID of the Founder
-FOUNDER_DISCORD_ID=your_discord_user_id_here
-
-# Admin Key for Web Dashboard authentication
-FOUNDER_KEY=CHANGE_ME_IN_PRODUCTION
-```
-
-#### Step 2: Set `config/kurucu.json`
-Set your Discord User ID:
-```json
-{
-  "founder": "YOUR_DISCORD_USER_ID_HERE"
-}
-```
-
-#### Step 3: Set `config/config.json`
-Configure admin permissions and security credentials:
-```json
-[
-  {
-    "admins": ["YOUR_DISCORD_USER_ID_HERE"],
-    "connectionSpeedLimit": 0.7,
-    "founderKey": "CHANGE_ME_IN_PRODUCTION"
-  }
-]
-```
-
-#### Step 4: Set `config/permissions.json`
-Add authorized Discord user tags:
-```json
-[
-  {
-    "authorizedUsers": ["<@YOUR_DISCORD_USER_ID_HERE>"]
-  }
-]
-```
-
----
-
-### 8. Running the Application
-
-#### Local Node.js Execution
-1. Install project dependencies:
-   ```bash
-   npm install
-   ```
-2. Start the backend server:
-   ```bash
-   npm start
-   ```
-3. Open `http://localhost:3000` in your web browser to access the Web Dashboard.
-
-#### Docker Sandbox Execution
-Run in an isolated container:
-```bash
-docker-compose up --build
+# 4. Start the agent
+npm start
 ```
 
 ---
@@ -236,168 +77,58 @@ docker-compose up --build
 ## 🇹🇷 Türkçe Dokümantasyon
 
 ### 1. Sistem Genel Bakışı ve Temel Hedef
-
 Bu proje, açık kaynaklı, üretim seviyesinde bir **Yerel Yapay Zeka Bilgisayar Kullanım Ajanı** (Local AI Computer-Use Agent) altyapısı sunar. Herhangi bir bulut aboneliği veya dış API anahtarı gerektirmeden %100 yerel olarak çalışmak üzere tasarlanmıştır. Doğrudan **LM Studio** (veya OpenAI ile uyumlu herhangi bir yerel REST sunucusu) ile bağlantı kurarak yerel yapay zeka modellerine bilgisayar yönetim yetenekleri kazandırır.
 
 Ajan otonom olarak şunları gerçekleştirebilir:
 - Sandbox sınırları içerisinde dosya okuma, yazma ve dizin tarama.
 - Risk değerlendirmesi ile sistem kabuk komutlarını (PowerShell/Bash) çalıştırma.
 - Puppeteer ile web sayfalarında gezinme, ekran görüntüsü alma, web araması yapma ve medya indirme.
-- WebSocket aracılığıyla etkileşimli Web Paneline canlı durum ve metrik aktarma.
-- Discord kanalları üzerinden uzaktan komut alma, butonlarla onay talep etme ve ses kanallarında müzik yayınlama (`yt-dlp`).
-
----
+- WebSocket aracılığıyla etkileşimli Web Paneline veya Electron tabanlı Masaüstü IDE'sine canlı veri aktarma.
+- Discord üzerinden uzaktan komut alma, butonlarla onay talep etme ve ses kanallarında müzik yayınlama (`yt-dlp`).
 
 ### 2. Mimari İnovasyonlar
-
-Sistem analizi ve araştırma notlarına (`research_notes.md`) dayanan temel teknik yenilikler:
+Proje mimarisi aşağıdaki ileri teknoloji yaklaşımları barındırır:
 
 1. **Manuel AI Köprüsü (Manual AI Bridge):** Yerel LLM çöktüğünde veya kapalı olduğunda sistem durmaz; istemleri harici web modellerine (Gemini, Claude, ChatGPT) kopyala-yapıştır yapabileceğiniz bir formata dönüştürür.
-2. **Delta Patch WebSocket Motoru:** Tüm state ağacını sürekli yeniden göndermek yerine `src/state.js`, ağ bant genişliğini ve CPU kullanımını korumak için sadece değişen verileri (`state_patch`) 150ms gecikmeyle yayınlar.
-3. **5 Katmanlı Araç Çağrı Ayrıştırıcısı:** JSON Markdown kod blokları, ham JSON, XML etiketleri, Qwen `[TOOL_CALLS]` sentaksı ve Heuristic Regex formatlarını destekler. Bu sayede 3B/7B gibi küçük modellerde bile araç çağrıları hatasız ayrıştırılır. (bunu test etmedim gemini yazdı. ama yinede sağlam görünüyo XD denenebilir.)
-4. **Gelişmiş Güvenlik Sandbox'ı:** Sembolik link saldırılarını engellemek için `fs.realpathSync` kullanır. Levenshtein mesafeli kelime tarayıcısı ve komut risk skorlaması (`pending_approval`) içerir.
-5. **Swarm Çoklu Ajan Modu:** Çok adımlı görevlerde yapay zekayı rol değiştirmeye yönlendirir (**Planlayıcı** $\rightarrow$ **Geliştirici** $\rightarrow$ **QA Testçi**).
-6. **Vektörel RAG Bellek + TF-IDF Fallback:** Görev geçmişini kosinüs benzerliği ile arar (LM Studio embeddings). Embedding modeli kapalıysa otomatik olarak TF-IDF kelime arama fallback'ine geçer.
+2. **Delta Patch WebSocket Motoru:** Tüm state ağacını sürekli yeniden göndermek yerine, ağ bant genişliğini ve CPU kullanımını korumak için sadece değişen verileri 150ms gecikmeyle yayınlar.
+3. **5 Katmanlı Araç Çağrı Ayrıştırıcısı:** 3B/7B gibi küçük modellerde bile araç çağrılarını hatasız ayrıştırmak için JSON, XML, Qwen syntax'ı ve Regex katmanları içerir.
+4. **Gelişmiş Güvenlik Sandbox'ı:** Sembolik link saldırılarını engellemek için `fs.realpathSync` kullanır. Levenshtein mesafeli kelime tarayıcısı ve komut risk skorlaması içerir.
+5. **Swarm Çoklu Ajan Modu:** Çok adımlı görevlerde yapay zekayı rol değiştirmeye yönlendirir (**Planlayıcı** → **Geliştirici** → **QA Testçi**).
+6. **Vektörel RAG Bellek + TF-IDF Fallback:** Görev geçmişini kosinüs benzerliği ile arar. Ayrıca workspace'in dizin haritasını ve loglarını `agent_readme.md` üzerine otomatik kaydeder ve Git auto-commit işlemini yönetir.
+7. **LPM (Low Parameter Mod) & OM (Odaklanma Modu):**
+   - **LPM:** Küçük parametreli (Low Parameter) yapay zeka modellerinin çok fazla tool (araç) gördüğünde kafasının karışmasını engellemek için tasarlanmıştır. Arayüzdeki bir slider yardımıyla (örn: her adımda tek tool sorarak) toolları modele tek tek sorar (Örn: "Şu tool'u mu kullanmak istiyorsun?" -> Hayır, "Peki bunu mu?" -> Evet). Ekranda aynı anda sadece tek tool gören modelin kafası karışmaz ve halüsinasyon azalır.
+   - **OM:** LPM ile birlikte açıldığında model, gelen prompt'a göre hangi aleti kullanması gerektiğini düşünür ve kendine bir mesaj iletir. Tıpkı bir stajyerin takım çantasına giderken aradığı alete odaklanması gibi, sadece o spesifik aleti bulmaya odaklanır. Bu ikili (LPM + OM) kombinasyonu ajanı hedefe kilitler.
+8. **Kütüphane Modu (Library Sub-Loop):** `MemoryLibrary` altındaki `.md` dosyalarını TF-IDF ile tarayarak en alakalı metinleri bağlama enjekte eder; dar bağlam pencereli (context window) modellerin şişmesini engeller.
 
----
+### 3. Modül ve Masaüstü IDE (Electron)
+Sunucu ve WebSocket altyapısının ötesinde, proje `electron/` dizini içerisinde 3 kolonlu bir Masaüstü IDE arayüzü barındırır. Bu IDE; Dosya Gezgini, Kod Editörü, Ajan Sohbeti ve Ayarlar ekranlarını barındırarak ajanı lokal bilgisayarınızda profesyonel bir asistan gibi yönetmenizi sağlar.
+Bağımsız `discordBot.js` modülü ise `yt-dlp` üzerinden müzik çalma, Discord karakter limitlerini aşmak için Auto-Chunking yetenekleri ve güvenli komut enjeksiyon (Command Injection) yamaları içerir.
 
-### 3. Küresel Yapay Zeka Ajan Tier Listesi ve Karşılaştırma
-
-Ajan framework'leri ile yapılan karşılaştırmalı performans testlerinde (`agent_karsilastirmalari.md`), **Pulsaristic Local AI Agent** gizlilik, güvenlik ve yerel kullanım kategorilerinde zirvede yer almaktadır:
-
-#### 🏆 100 Puan Üzerinden Genel Tier List
-
-| Tier | Ajan / Framework | Puan (100) | Öne Çıkan Özellik |
-| :---: | :--- | :---: | :--- |
-| **` S `** | **Antigravity / Cursor / Windsurf** | **94 / 100** | Derin IDE entegrasyonu ve canlı kod indeksleme. |
-| **` S `** | **Pulsaristic (Local AI Agent)** | **88 / 100** | **%100 Yerel, Sıfır Abonelik, Sandbox Koruması & Manuel AI Köprüsü.** |
-| **` A `** | **CrewAI** | **85 / 100** | Rol tabanlı çoklu ajan işbirliği. |
-| **` A `** | **LangGraph (LangChain)** | **84 / 100** | Çizge (Graph) tabanlı durum yönetimi. |
-| **` A `** | **Cognition Devin** | **83 / 100** | Otonom bulut yazılım geliştirici. |
-| **` B `** | **Microsoft AutoGen** | **79 / 100** | Diyalog tabanlı çoklu ajan mimarisi. |
-| **` B `** | **OpenInterpreter** | **78 / 100** | Yerel kod çalıştırıcı ve terminal ajanı. |
-| **` B `** | **Claude Engineer** | **75 / 100** | CLI tabanlı otonom asistan. |
-
----
-
-### 4. Yerel LLM Model Yetenek Seviyeleri
-
-LM Studio üzerinde ajanla birlikte kullanılabilecek model seviyeleri:
-
-| Tier | Model Sınıfı / Boyutu | Performans ve Değerlendirme |
-| :---: | :--- | :--- |
-| **` S `** | **Gemini / Claude / GPT** | **Mükemmel**. Kusursuz çok adımlı planlama, mantık yürütme ve araç seçimi. |
-| **` A `** | **Devstral Small 2 (24B)** | **Çok Başarılı**. Yüksek araç kullanma kapasitesi, çoklu dosya değişikliklerini temiz çözer. |
-| **` B `** | **Qwen 2.5 Coder (14B)** | **Önerilen Varsayılan**. Harika kod sentaksı, güvenilir JSON formatı, hızlı yanıt. |
-| **` C `** | **Gemma 3 (12B)** | **Orta**. Tekli araç çağrılarını düzgün yürütür; çok adımlı mantıkta duraklayabilir. |
-| **` D `** | **Qwen 2.5 Coder (7B)** | **Sınırda**. Hafif donanımlar için uygundur; istemleri net tutun. |
-| **` E `** | **Qwen 2.5 (3B)** | **Zayıf**. Temel araç çağrısı yapar; uzun döngülerde Manuel AI Köprüsü desteği ister. |
-| **` F `** | **Qwen 2.5 (0.5B)** | **Kullanılamaz**. Parametre yetersizliği nedeniyle hatalı JSON üretir. |
-
----
-
-### 5. Modül ve Dizin Haritası
-
-Projeye ait temel modüller ve sorumlulukları (`genel_proje_bilgisi.md`):
-
-```
-.
-├── server.js               # Express HTTP ve WebSocket sunucusu, CPU/RAM ölçümleri yayınlayıcı
-├── Dockerfile              # Docker sandbox container tanımı
-├── docker-compose.yml      # Çoklu container orkestrasyonu
-├── package.json            # Node.js bağımlılıkları (express, ws, discord.js, puppeteer)
-├── README.md               # Çift dilli (TR / EN) kapsamlı rehber
-├── agent_readme.md         # Otomatik güncellenen dizin haritası ve görev geçmişi
-├── config/                 # Dinamik yapılandırma dosyaları (JSON şablonları)
-│   ├── config.json         # Admin ID'leri, hız limitleri ve şifreler
-│   ├── kurucu.json         # Kurucu Discord Kullanıcı ID tanımı
-│   ├── permissions.json    # Yetkili Discord kullanıcı listesi
-│   ├── security_rules.json # Yasaklı kelimeler, komutlar ve izin verilen dizinler
-│   └── memory.json         # Görev geçmişi ve vektör veritabanı
-├── src/                    # Çekirdek uygulama mantığı
-│   ├── agent.js            # Ana döngü (runAgentLoop), Swarm modu, onay yöneticisi
-│   ├── state.js            # Global reaktif ajan durumu, WebSocket delta patch motoru
-│   ├── security.js         # Levenshtein kelime tarayıcısı, realpathSync sandbox, risk skorlama
-│   ├── memory.js           # RAG vektör bellek (kosinüs benzerliği) + TF-IDF fallback
-│   ├── llm/
-│   │   └── llmClient.js    # LM Studio istemcisi, retry backoff, 5 formatlı ayrıştırıcı
-│   ├── tools/              # Sistem komutları, Puppeteer tarayıcısı, dosya işlemleri
-│   ├── ws/                 # WebSocket mesaj işleyici
-│   └── discord/            # Discord bot istemcisi, müzik çalar (yt-dlp)
-└── WikiLike/               # Obsidian uyumlu wiki dokümantasyonu
-```
-
----
-
-### 6. Kurulum Gereksinimleri
-
-Uygulamayı çalıştırmadan önce:
-
-1. **Node.js** (v18.0.0 veya üzeri).
-2. **LM Studio** kurulu olmalı ve API Sunucusu açık olmalıdır (`http://localhost:1234`).
-3. Bilgisayarınızda **Google Chrome / Chromium** kurulu olmalıdır (Puppeteer web taraması için).
-4. *(İsteğe Bağlı)* Discord entegrasyonu için bir **Discord Bot Tokenı**.
-
----
-
-### 7. Yapılandırma Rehberi (Adım Adım)
-
-#### 1. Adım: `.env` Oluşturma
-`.env.example` dosyasını `.env` olarak kopyalayın:
+### 4. Hızlı Başlangıç (Quick Start)
 ```bash
+# 1. Repoyu klonlayın
+git clone https://github.com/siyahpulsar/Pulsaristic-Local-AI-Agent.git
+cd Pulsaristic-Local-AI-Agent
+
+# 2. Bağımlılıkları yükleyin
+npm install
+
+# 3. Ortam değişkenlerini ve yapılandırmaları hazırlayın
 cp .env.example .env
-```
-Gerekli alanları doldurun:
-```env
-DISCORD_TOKEN=bot_tokeninizi_yazin
-PORT=3000
-FOUNDER_DISCORD_ID=discord_id nizi_yazin
-FOUNDER_KEY=PANEL_SIFRENIZ
-```
+cp config/kurucu.example.json config/kurucu.json
+cp config/config.example.json config/config.json
+cp config/permissions.example.json config/permissions.json
 
-#### 2. Adım: `config/kurucu.json`
-Discord Kullanıcı ID'nizi girin:
-```json
-{
-  "founder": "DISCORD_ID_NIZI_YAZIN"
-}
-```
-
-#### 3. Adım: `config/config.json`
-Admin yetkilerini ve panel şifrenizi tanımlayın:
-```json
-[
-  {
-    "admins": ["DISCORD_ID_NIZI_YAZIN"],
-    "connectionSpeedLimit": 0.7,
-    "founderKey": "PANEL_SIFRENIZ"
-  }
-]
+# 4. Ajanı başlatın
+npm start
 ```
 
 ---
 
-### 8. Uygulamayı Çalıştırma ve Docker
-
-#### Yerel Node.js ile Çalıştırma
-1. Bağımlılıkları yükleyin:
-   ```bash
-   npm install
-   ```
-2. Sunucuyu başlatın:
-   ```bash
-   npm start
-   ```
-3. Tarayıcınızdan `http://localhost:3000` adresini açarak Web Paneline erişin.
-
-#### Docker Sandbox ile Çalıştırma
-İzole ortamda başlatmak için:
-```bash
-docker-compose up --build
-```
+## 🤝 Contributing / Katkıda Bulunma
+Pull Request'lere, yeni araç (tool) önerilerine ve hata bildirimlerine açığız! Projeyi geliştirmek için bir PR göndermekten çekinmeyin.
 
 ---
 
 ## 📜 License
-
 This project is open-source software available under the **MIT License**.

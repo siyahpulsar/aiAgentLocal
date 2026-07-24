@@ -578,6 +578,24 @@ function updateSettingsUI(settings) {
     swarmCheckbox.checked = !!settings.swarmMode;
   }
 
+  // Populate LPM Mode toggles
+  const settingLpm = document.getElementById('setting-lpm');
+  if (settingLpm) {
+    settingLpm.checked = !!settings.lpmMode;
+    document.getElementById('lpm-om-container').style.display = settings.lpmMode ? 'block' : 'none';
+    document.getElementById('lpm-batch-container').style.display = settings.lpmMode ? 'block' : 'none';
+  }
+  const settingLpmOm = document.getElementById('setting-lpm-om');
+  if (settingLpmOm) {
+    settingLpmOm.checked = !!settings.lpmOmMode;
+  }
+  const settingLpmBatch = document.getElementById('setting-lpm-batch');
+  const lpmBatchVal = document.getElementById('lpm-batch-val');
+  if (settingLpmBatch) {
+    settingLpmBatch.value = settings.lpmBatchSize || 1;
+    if (lpmBatchVal) lpmBatchVal.innerText = settingLpmBatch.value;
+  }
+
   // Populate Auto-Approval Whitelist checkboxes
   const tools = ['read_file', 'write_file', 'list_directory', 'web_search', 'view_website', 'open_application'];
   tools.forEach(t => {
@@ -616,8 +634,11 @@ function updateSettingsUI(settings) {
 
 // Tab navigation handler
 document.querySelectorAll('.nav-btn').forEach(btn => {
+  if (btn.id === 'btn-open-ide') return; // skip for open ide button
   btn.onclick = () => {
-    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b => {
+      if (b.id !== 'btn-open-ide') b.classList.remove('active');
+    });
     document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
 
     btn.classList.add('active');
@@ -625,6 +646,31 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
     document.getElementById(`panel-${activeTab}`).classList.add('active');
   };
 });
+
+const settingLpmEl = document.getElementById('setting-lpm');
+if (settingLpmEl) {
+  settingLpmEl.addEventListener('change', (e) => {
+    document.getElementById('lpm-om-container').style.display = e.target.checked ? 'block' : 'none';
+    document.getElementById('lpm-batch-container').style.display = e.target.checked ? 'block' : 'none';
+  });
+}
+
+const openIdeBtn = document.getElementById('btn-open-ide');
+if (openIdeBtn) {
+  openIdeBtn.onclick = async () => {
+    try {
+      const res = await fetch('/api/open-ide', { method: 'POST' });
+      const data = await res.json();
+      if (!data.success) {
+        alert(data.message || 'Failed to open IDE.');
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Error communicating with backend.');
+    }
+  };
+}
+
 
 // Chat prompt submission
 chatForm.onsubmit = (e) => {
@@ -814,7 +860,10 @@ saveSettingsBtn.onclick = () => {
     maxSteps: parseInt(settingSteps.value),
     systemPrompt: settingPrompt.value.trim(),
     swarmMode: swarmMode,
-    autoApprove: autoApprove
+    autoApprove: autoApprove,
+    lpmMode: document.getElementById('setting-lpm').checked,
+    lpmOmMode: document.getElementById('setting-lpm-om').checked,
+    lpmBatchSize: parseInt(document.getElementById('setting-lpm-batch').value) || 1
   };
 
   ws.send(JSON.stringify({

@@ -50,7 +50,7 @@ function initDiscordBot(wsBroadcast, serverCallbacks = null) {
   if (!token) return;
   
   state.client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent, GatewayIntentBits.GuildVoiceStates] });
-  state.client.once('ready', () => {
+  state.client.once('clientReady', () => {
     state.discordState.online = true;
     if (state.broadcastCallback) state.broadcastCallback();
     state.client.user.setActivity('Pulsaristic music', { type: ActivityType.Listening });

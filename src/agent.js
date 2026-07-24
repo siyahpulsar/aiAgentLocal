@@ -181,7 +181,98 @@ async function runAgentLoop() {
       discordBot.updateDiscordStatus('thinking', `Step ${steps}/${config.maxSteps}`, 'Connecting to LLM and planning next action...', agentState);
     }
 
-    const { dynamicSystemPrompt, activeRole } = await getDynamicSystemPrompt(steps);
+    let { dynamicSystemPrompt, activeRole } = await getDynamicSystemPrompt(steps);
+    let selectedToolsForLpm = null;
+
+    if (config.lpmMode) {
+      const { parseSystemPromptTools, getGuidelinesForTool, llmFetch, reconstructSystemPromptForLPM } = require('./llm/llmClient');
+      const parsedPrompt = parseSystemPromptTools(config.systemPrompt);
+      if (parsedPrompt && parsedPrompt.tools && parsedPrompt.tools.length > 0) {
+        broadcastTerminal(`\n*** [LPM MODE] Initializing Low Parameter Mode for Tool Selection... ***\n`);
+        addMessage('system', '[LPM] Low Parameter Mode (Düşük Parametre Modu) araç seçimi için başlatılıyor...');
+        
+        let idealToolIdea = null;
+        if (config.lpmOmMode) {
+          broadcastTerminal(`> [LPM OM] Querying LLM for ideal tool requirement...\n`);
+          const omMessages = [
+            { role: 'system', content: 'You are a technical planner. Briefly describe the exact function and capability of the tool you need to complete the next step.' },
+            { role: 'user', content: `Kullanıcıdan sana iletilen nihai isteğe göre ve sana iletilen task'e göre aklında nasıl bir tool kullanmak geçiyor? İsteğe göre nasıl bir tool kullanmak avantajlıdır? Seçmen gereken tool nasıl bir işlevi gerçekleştiriyor olmalı?\n\nTask: ${agentState.task}` }
+          ];
+          idealToolIdea = await llmFetch(omMessages, config.temperature, 'OM Ideal Tool');
+          broadcastTerminal(`> [LPM OM] Ideal Tool Idea: ${idealToolIdea.substring(0, 100)}...\n`);
+          addMessage('system', `[LPM OM] Ajanın ihtiyaç tespiti: "${idealToolIdea}"`);
+        }
+
+        const batchSize = config.lpmBatchSize || 1;
+        let selectedBatch = null;
+
+        for (let i = 0; i < parsedPrompt.tools.length; i += batchSize) {
+          const batchTools = parsedPrompt.tools.slice(i, i + batchSize);
+          let lpmUserPrompt = '';
+          if (idealToolIdea) {
+            lpmUserPrompt += `Aklımda şöyle bir toolu kullanmak var: ${idealToolIdea}\n\n`;
+            lpmUserPrompt += `Sırada ki task: ${agentState.task}\n\n`;
+          } else {
+            lpmUserPrompt += `Task: ${agentState.task}\n\n`;
+          }
+
+          if (batchTools.length === 1) {
+            lpmUserPrompt += `Görev listesinde yapıcağın sırada ki görevde aşağıda ki tool işe yarayıp yaramayacağını cevap vermelisin. Eğer bu tool, yapıcağın işlem için saçma ise "hayır", işlevli ve yerinde bir tool ise "evet" yanıtını ver.\n\n`;
+          } else {
+            lpmUserPrompt += `Görev listesinde yapıcağın sırada ki görevde aşağıda ki toolların işe yarayıp yaramayacağını cevap vermelisin. Eğer bu toollar yapıcağın işlem için saçma ise "hayır", içlerinden biri işlevli ve yerinde bir tool ise "evet" yanıtını ver.\n\n`;
+          }
+
+          batchTools.forEach((tool, idx) => {
+            const guidelines = getGuidelinesForTool(tool, parsedPrompt.guidelines);
+            lpmUserPrompt += `[Tool ${idx + 1}]\n${tool}\n`;
+            if (guidelines.length > 0) {
+              lpmUserPrompt += `Guidelines: ${guidelines.join(' ')}\n`;
+            }
+            lpmUserPrompt += `\n`;
+          });
+
+          lpmUserPrompt += `Bu tool${batchTools.length > 1 ? 'lar' : ''}, task üzerinde yapıcağın işleme göre gerekiyor ise "evet", gerekmiyor ise "hayır" yaz. (Sadece 'evet' veya 'hayır' yanıtı ver)`;
+
+          const lpmMessages = [{ role: 'user', content: lpmUserPrompt }];
+          const lpmResponse = await llmFetch(lpmMessages, 0.1, 'LPM Tool Check');
+          addMessage('system', `[LPM Batch ${Math.floor(i/batchSize) + 1}] LLM Yanıtı: "${lpmResponse.replace(/\n/g, ' ')}"`);
+          
+          if (lpmResponse && lpmResponse.toLowerCase().includes('evet')) {
+            selectedBatch = batchTools;
+            broadcastTerminal(`> [LPM] Selected tool batch at index ${i}.\n`);
+            addMessage('system', `[LPM] Gerekli araçlar ${Math.floor(i/batchSize) + 1}. Batch içerisinde bulundu.`);
+            break;
+          } else {
+            broadcastTerminal(`> [LPM] Tool batch rejected (Reply: ${lpmResponse.substring(0, 30)}).\n`);
+          }
+        }
+
+        if (selectedBatch) {
+          selectedToolsForLpm = selectedBatch;
+        } else {
+          broadcastTerminal(`> [LPM] LPModu işe yaramadı. Fallback to full toolset.\n`);
+          addMessage('system', 'LPModu işe yaramadı.', activeRole);
+          if (activeDiscordContext) {
+            discordBot.sendChannelMessage("⚠️ LPModu işe yaramadı, tüm araçlar yükleniyor...", null, { hasToolCall: false });
+          }
+        }
+      }
+    }
+
+    if (config.lpmMode && selectedToolsForLpm) {
+      const { parseSystemPromptTools, reconstructSystemPromptForLPM } = require('./llm/llmClient');
+      const parsedPrompt = parseSystemPromptTools(config.systemPrompt);
+      const rebuiltPromptBase = reconstructSystemPromptForLPM(parsedPrompt, selectedToolsForLpm);
+      if (rebuiltPromptBase) {
+         const originalPrompt = config.systemPrompt;
+         config.systemPrompt = rebuiltPromptBase;
+         const res = await getDynamicSystemPrompt(steps);
+         dynamicSystemPrompt = res.dynamicSystemPrompt;
+         activeRole = res.activeRole;
+         config.systemPrompt = originalPrompt;
+      }
+    }
+
     const requestMessages = await prepareRequestMessages(dynamicSystemPrompt);
     
     const { assistantText, action } = await fetchAndParseAction(requestMessages);
@@ -258,7 +349,8 @@ async function runAgentLoop() {
       // or handle library mode in the tools logic directly. Actually, executeTool handles library mode partially, 
       // but in original code, it called runLibraryModeSubLoop here.
       if (targetAction.action === 'library_mode' && toolResult.success) {
-        await module.exports.runLibraryModeSubLoop(targetAction.search, targetAction.explanation);
+        const { runLibraryModeSubLoop } = require('./modes/libraryMode');
+        await runLibraryModeSubLoop(targetAction.search, targetAction.explanation);
       }
 
       if (config.swarmMode && agentState.planSteps.length > 0 && toolResult.success !== false) {
@@ -322,8 +414,11 @@ async function initializeTaskContextAndSelectMode(userTask) {
   const readmeContent = await fs.promises.readFile(readmePath, 'utf-8');
 
   broadcastTerminal(`\n*** [INITIALIZATION] Reading and filtering agent_readme.md context... ***\n`);
+  // Will addMessage after messages array reset so it actually shows up
+  let relevantInfoStr = '';
 
   const relevantInfo = filterReadmeByKeywords(readmeContent, userTask);
+  relevantInfoStr = relevantInfo;
   broadcastTerminal(`> [AGENT README FILTERED] Extracted relevant info using local keyword scorer:\n${relevantInfo}\n`);
 
   agentState.messages = [];
@@ -333,6 +428,8 @@ async function initializeTaskContextAndSelectMode(userTask) {
   agentState.thoughts = [];
   broadcastState();
 
+  addMessage('system', `[INITIALIZATION] Geçmiş çalışma belleği (agent_readme.md) okundu ve filtrelendi.`);
+
   const renewedPrompt = `Task: "${userTask}"\n\nPast Workspace History (For context only, not current rules or system constraints): [${relevantInfo}]`;
   addMessage('user', renewedPrompt);
 
@@ -341,6 +438,7 @@ async function initializeTaskContextAndSelectMode(userTask) {
 
   if (guides.length > 0) {
     broadcastTerminal(`\n*** [MODE SELECT] Determining guide mode selection... ***\n`);
+    addMessage('system', `[MODE SELECT] Ajan rehber (guide) kütüphanesini tarıyor...`);
 
     let choosingGuideInstructions = '';
     const metaGuidePath = path.join(agentState.cwd, 'Libraries', 'ObsiLibrary', 'ObsiLibrary', 'choosing_guide_guide.md');
@@ -508,7 +606,6 @@ module.exports = {
   startDiscordAgentTask,
   handleDiscordAgentAction,
   getPendingAction,
-  resolvePendingAction,
-  resolveManualBridgeResponse
+  resolvePendingAction
 };
 

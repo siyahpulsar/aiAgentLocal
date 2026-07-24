@@ -1,5 +1,9 @@
 
-const { getLmStudioEndpoint, config, agentState, broadcastTerminal } = require('../state');
+const { getLmStudioEndpoint, config, agentState, broadcastTerminal, broadcastState } = require('../state');
+
+// Module-scoped resolver for Manual AI Bridge (prevents global namespace pollution)
+let manualBridgeResolver = null;
+const { getMemoryPrompt, getWorkspaceRulesPrompt } = require('../memory');
 
 async function llmFetch(messages, temperature = 0.2, bridgeContext = null, maxRetries = 3) {
   let lastError = null;
@@ -256,4 +260,78 @@ function resolveManualBridgeResponse(responseText) {
   return false;
 }
 
-module.exports = { llmFetch, cleanMalformedJsonString, parseAssistantAction, resolveManualBridgeResponse, getDynamicSystemPrompt };
+function parseSystemPromptTools(systemPromptText) {
+  const toolsStartIdx = systemPromptText.indexOf('Available Tools:');
+  const guidelinesStartIdx = systemPromptText.indexOf('IMPORTANT GUIDELINES:');
+  
+  if (toolsStartIdx === -1 || guidelinesStartIdx === -1) {
+    return null;
+  }
+
+  const prefix = systemPromptText.substring(0, toolsStartIdx + 'Available Tools:\n'.length);
+  const toolsSection = systemPromptText.substring(toolsStartIdx + 'Available Tools:\n'.length, guidelinesStartIdx).trim();
+  const guidelinesSection = systemPromptText.substring(guidelinesStartIdx).trim();
+
+  const tools = [];
+  const toolRegex = /(\d+\.\s+\{[\s\S]*?\n\s*-[\s\S]*?)(?=\n\d+\.\s+\{|$)/g;
+  let match;
+  while ((match = toolRegex.exec(toolsSection)) !== null) {
+    tools.push(match[1].trim());
+  }
+
+  const guidelinesText = guidelinesSection.substring('IMPORTANT GUIDELINES:\n'.length).trim();
+  const guidelines = [];
+  const guidelineRegex = /(^-[\s\S]*?)(?=\n-|$)/gm;
+  while ((match = guidelineRegex.exec(guidelinesText)) !== null) {
+    guidelines.push(match[1].trim());
+  }
+
+  return { prefix, tools, guidelines };
+}
+
+function getGuidelinesForTool(toolText, guidelines) {
+  const m = toolText.match(/"action"\s*:\s*"([^"]+)"/);
+  if (!m) return [];
+  const actionName = m[1];
+  return guidelines.filter(g => g.includes(`"${actionName}"`) || g.includes(`'${actionName}'`) || g.includes(actionName));
+}
+
+function reconstructSystemPromptForLPM(parsedPrompt, selectedTools) {
+  if (!parsedPrompt || !selectedTools || selectedTools.length === 0) return null;
+  
+  let rebuiltPrompt = parsedPrompt.prefix;
+  selectedTools.forEach((toolText, index) => {
+    rebuiltPrompt += `${index + 1}. ${toolText.substring(toolText.indexOf('{'))}\n`;
+  });
+
+  rebuiltPrompt += '\nIMPORTANT GUIDELINES:\n';
+  
+  parsedPrompt.guidelines.forEach(guide => {
+    const toolMentions = parsedPrompt.tools.map(t => {
+      const m = t.match(/"action"\s*:\s*"([^"]+)"/);
+      return m ? m[1] : null;
+    }).filter(Boolean);
+
+    let specificToOtherTool = false;
+    toolMentions.forEach(tm => {
+      if (guide.includes(`"${tm}"`) || guide.includes(`'${tm}'`)) {
+        let mentionsSelected = false;
+        selectedTools.forEach(st => {
+          const stMatch = st.match(/"action"\s*:\s*"([^"]+)"/);
+          if (stMatch && (guide.includes(`"${stMatch[1]}"`) || guide.includes(`'${stMatch[1]}'`))) {
+            mentionsSelected = true;
+          }
+        });
+        if (!mentionsSelected) specificToOtherTool = true;
+      }
+    });
+
+    if (!specificToOtherTool) {
+      rebuiltPrompt += `${guide}\n`;
+    }
+  });
+
+  return rebuiltPrompt;
+}
+
+module.exports = { llmFetch, cleanMalformedJsonString, parseAssistantAction, resolveManualBridgeResponse, getDynamicSystemPrompt, parseSystemPromptTools, getGuidelinesForTool, reconstructSystemPromptForLPM };

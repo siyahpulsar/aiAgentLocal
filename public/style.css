@@ -1597,3 +1597,24 @@ body {
   50% { opacity: 0.6; box-shadow: 0 0 0 4px rgba(245,158,11,0.15); }
 }
 .hidden { display: none !important; }
+
+/* Custom Slider Style */
+input[type="range"] {
+  -webkit-appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  height: 6px;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 14px;
+  width: 14px;
+  background: var(--color-primary);
+  border-radius: 50%;
+  margin-top: -4px;
+  box-shadow: 0 0 5px var(--color-primary);
+}

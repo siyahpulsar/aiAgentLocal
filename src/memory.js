@@ -47,9 +47,13 @@ async function appendToMemory(task, summary, extraData = {}) {
       accessCount: 0,
       date: new Date().toISOString()
     });
-    if (memories.length > 20) {
+    const memLimit = config.memoryLimit || 1000;
+    if (memories.length > memLimit) {
       memories.sort((a, b) => (a.accessCount || 0) - (b.accessCount || 0));
-      memories.shift();
+      // Sınırı aşan kadarını baştan (en az erişilen) çıkar
+      while(memories.length > memLimit) {
+        memories.shift();
+      }
     }
     await saveMemory(memories);
   } catch (e) {
@@ -64,10 +68,65 @@ async function getMemoryPrompt(currentTaskQuery) {
   let selectedMemories = memories;
 
   if (currentTaskQuery) {
-    const { config } = require('./state');
-    let queryVector = null;
+    const { config, broadcastTerminal } = require('./state');
     
-    // Try to get query embedding
+    if (config.simbaEnabled) {
+      // === SiMBA (Searched Memory By AI) ===
+      broadcastTerminal(`\n> [SiMBA] Hafızalar LLM ile taranıyor...\n`);
+      const { llmFetch } = require('./llm/llmClient');
+      let selectedIndices = [];
+      const chunkSize = 20;
+
+      for (let i = 0; i < memories.length; i += chunkSize) {
+        const chunk = memories.slice(i, i + chunkSize);
+        let memoryListText = "";
+        chunk.forEach((m, idx) => {
+          memoryListText += `${i + idx + 1}: ${m.summary}\n`;
+        });
+
+        const promptText = `Gelen İstek: ${currentTaskQuery}\n\nBu gelen isteğe göre aşağıda listelenmiş özetlere bakarak hangi numaralı hafızalar sana gelen istek ile uyumludur? Sadece ve sadece virgülle ayrılmış numaraları döndür (Örnek: 1,3,15). Başka hiçbir kelime veya açıklama yazma. Eğer hiçbiri uyumlu değilse boş bırak.\n\nHafızalar:\n${memoryListText}`;
+
+        const messages = [
+          { role: 'system', content: 'Sen sadece ilgili numaraları virgülle döndüren bir robotsun. Cümle kurma.' },
+          { role: 'user', content: promptText }
+        ];
+
+        try {
+          const llmResponse = await llmFetch(messages, 0.1, 'SiMBA Memory Search');
+          if (llmResponse) {
+            const numbers = llmResponse.match(/\d+/g);
+            if (numbers) {
+              numbers.forEach(numStr => {
+                const num = parseInt(numStr, 10);
+                if (num >= i + 1 && num <= i + chunk.length) {
+                  selectedIndices.push(num - 1); // 0-indexed yap
+                }
+              });
+            }
+          }
+        } catch (err) {
+          console.error("SiMBA error fetching:", err);
+        }
+      }
+
+      // Benzersiz indeksleri al
+      selectedIndices = [...new Set(selectedIndices)];
+      selectedMemories = selectedIndices
+        .filter(idx => idx >= 0 && idx < memories.length)
+        .map(idx => memories[idx]);
+
+      if (selectedMemories.length === 0) {
+        broadcastTerminal(`> [SiMBA] Uyumlu hafıza bulunamadı, son 3 hafıza alınıyor...\n`);
+        selectedMemories = memories.slice(-3);
+      } else {
+        broadcastTerminal(`> [SiMBA] ${selectedMemories.length} adet uyumlu hafıza bulundu.\n`);
+      }
+
+    } else {
+      // === Kalsik TF-IDF / Vector Search ===
+      let queryVector = null;
+      
+      // Try to get query embedding
     if (config.lmStudioUrl) {
       queryVector = await getEmbedding(currentTaskQuery, config.lmStudioUrl);
     }
@@ -120,6 +179,7 @@ async function getMemoryPrompt(currentTaskQuery) {
         selectedMemories = memories.slice(-3);
       }
     }
+    } // end else (classic TF-IDF / Vector Search)
   } else {
     selectedMemories = memories.slice(-3);
   }
@@ -324,8 +384,8 @@ async function runGitCommit(task, summary) {
 
   return new Promise((resolve) => {
     broadcastTerminal(`\n> [GIT AUTO-COMMIT] Staging changes and committing...\n`);
-    const safeTask = task.substring(0, 50).replace(/["'`$\\]/g, '');
-    const safeSummary = summary.replace(/["'`$\\]/g, '');
+    const safeTask = task.substring(0, 50).replace(/["'`$\\&|<>\r\n]/g, '');
+    const safeSummary = summary.replace(/["'`$\\&|<>\r\n]/g, '');
     const commitMsg = `feat(agent): accomplished task - ${safeTask}...\n\nSummary: ${safeSummary}`;
     const gitCmd = `git add . && git commit -m "${commitMsg}"`;
 

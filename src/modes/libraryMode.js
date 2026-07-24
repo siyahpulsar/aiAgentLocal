@@ -2,7 +2,6 @@
 const fs = require('fs');
 const path = require('path');
 const { agentState, broadcastState, broadcastTerminal, addMessage } = require('../state');
-const { execute_command } = require('../tools/filesystem');
 const { searchKnowledge } = require('../rag/vectorSearch');
 const { llmFetch, cleanMalformedJsonString } = require('../llm/llmClient');
 
@@ -61,9 +60,11 @@ async function runLibraryModeSubLoop(searchQuery, explanation) {
     if (matched.length > 0) {
       candidateFiles = matched.slice(0, 10).map(s => s.fileName);
       broadcastTerminal(`> [LIBRARY PRE-FILTER] Local keyword search filtered ${files.length} down to ${candidateFiles.length} top candidates.\n`);
+      addMessage('system', `[LIBRARY PRE-FILTER] ${files.length} dosya arasından ${candidateFiles.length} potansiyel dosya filtrelendi.`);
     } else {
       candidateFiles = files.slice(0, 10);
       broadcastTerminal(`> [LIBRARY PRE-FILTER] No keyword matches. Checking first ${candidateFiles.length} files as fallback.\n`);
+      addMessage('system', `[LIBRARY PRE-FILTER] Anahtar kelime eşleşmesi bulunamadı. İlk ${candidateFiles.length} dosya taranıyor.`);
     }
   }
 
@@ -98,6 +99,7 @@ Eğer bu listede aradığın bilgiyle ilişkili hiçbir dosya yoksa, sadece "no"
     }
 
     broadcastTerminal(`> [LIBRARY SELECTION BATCH] Response: "${repliedText}"\n`);
+    addMessage('system', `[LIBRARY SELECTION BATCH] Seçilen dosyalar: "${repliedText.replace(/\n/g, ' ')}"`);
 
     if (repliedText && repliedText.toLowerCase() !== 'no' && repliedText.toLowerCase() !== 'hayır') {
       const chosen = repliedText.split(',').map(s => s.trim()).filter(s => chunk.includes(s));
@@ -142,6 +144,7 @@ Eğer eklenmesini istiyorsan sadece "evet" veya "yes" veya "true" yaz.
 
     const isYes = checkReply.includes('evet') || checkReply.includes('yes') || checkReply.includes('true');
     broadcastTerminal(`> Verification for "${fileName}": "${checkReply}" -> ${isYes ? 'ACCEPTED' : 'REJECTED'}\n`);
+    addMessage('system', `[LIBRARY VERIFICATION] "${fileName}" incelendi. Sonuç: ${isYes ? 'KABUL EDİLDİ' : 'REDDEDİLDİ'} ("${checkReply}")`);
 
     if (isYes) {
       acceptedFiles.push({ name: fileName, content: fileContent });

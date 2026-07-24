@@ -11,7 +11,7 @@ const {
   getAvailableGuides,
   refreshGuidesCache
 } = require('../state');
-const { checkBannedWords } = require('../security');
+const { checkBannedWords, setIdeWorkspace } = require('../security');
 const { checkVisionCapability } = require('../tools');
 const { resolveManualBridgeResponse } = require('../llm/llmClient');
 const {
@@ -51,9 +51,14 @@ module.exports = function setupWebSocketHandler(wss, founderKey, discordBot, res
         readJsonSafe(configPath).then(r => Array.isArray(r) ? r : []),
       ]);
 
+      // Mask secrets before sending to client
+      const safeEnv = { ...envObj };
+      if (safeEnv.DISCORD_TOKEN) safeEnv.DISCORD_TOKEN = safeEnv.DISCORD_TOKEN.replace(/.(?=.{4})/g, '*');
+      if (safeEnv.FOUNDER_KEY) safeEnv.FOUNDER_KEY = safeEnv.FOUNDER_KEY.replace(/.(?=.{2})/g, '*');
+
       ws.send(JSON.stringify({
         type: 'admin_data',
-        env: envObj,
+        env: safeEnv,
         securityRules,
         kurucu: kurucuObj,
         permissions: permissionsObj,
@@ -75,10 +80,8 @@ module.exports = function setupWebSocketHandler(wss, founderKey, discordBot, res
           const crypto = require('crypto');
           let isValid = false;
           try {
-            if (typeof data.key === 'string' && typeof founderKey === 'string' && data.key.length === founderKey.length) {
+            if (founderKey && typeof data.key === 'string' && typeof founderKey === 'string' && data.key.length === founderKey.length) {
               isValid = crypto.timingSafeEqual(Buffer.from(data.key), Buffer.from(founderKey));
-            } else if (!data.key && !founderKey) {
-              isValid = true;
             }
           } catch (e) {}
           
@@ -112,6 +115,7 @@ module.exports = function setupWebSocketHandler(wss, founderKey, discordBot, res
           if (bannedWord) {
             broadcastTerminal(`\n  [BANNED WORD DETECTED] Task contains banned phrase: "${bannedWord}"\n  `);
             ws.send(JSON.stringify({ type: 'error', message: `İstek güvenlik kuralları gereği yasaklı bir kelime ("${bannedWord}") içeriyor! İşlem durduruldu.` }));
+            addMessage('system', `[GÜVENLİK] Yasaklı kelime ("${bannedWord}") tespit edildi. İstek reddedildi.`);
             agentState.status = 'failed';
             broadcastState();
             break;
@@ -163,7 +167,10 @@ module.exports = function setupWebSocketHandler(wss, founderKey, discordBot, res
           break;
 
         case 'update_settings':
-          // Modify properties on the config object reference directly
+          // Modifying config object directly, but ensure critical security properties are NOT overridden in memory
+          if (data.settings && data.settings.bannedCommands !== undefined) {
+            delete data.settings.bannedCommands;
+          }
           Object.assign(config, data.settings);
           ws.send(JSON.stringify({ type: 'settings', settings: config }));
           broadcastTerminal(`> [SETTINGS] Config settings updated.\n  `);
@@ -184,8 +191,12 @@ module.exports = function setupWebSocketHandler(wss, founderKey, discordBot, res
 
         case 'update_cwd':
           if (fs.existsSync(data.cwd)) {
-            agentState.cwd = path.resolve(data.cwd);
-            broadcastTerminal(`> Working directory changed to: ${agentState.cwd}\n  `);
+            const resolvedCwd = path.resolve(data.cwd);
+            agentState.cwd = resolvedCwd;
+            // IDE Workspace Mode: grant full access to this folder
+            setIdeWorkspace(resolvedCwd);
+            broadcastTerminal(`> Workspace set to: ${resolvedCwd}\n  `);
+            ws.send(JSON.stringify({ type: 'cwd_updated', cwd: resolvedCwd }));
             broadcastState();
           } else {
             ws.send(JSON.stringify({ type: 'error', message: 'Specified folder directory does not exist!' }));
@@ -343,8 +354,19 @@ module.exports = function setupWebSocketHandler(wss, founderKey, discordBot, res
         case 'commit_sandbox_file':
           try {
             const relPath = data.path;
-            const sourcePath = path.join(path.join(__dirname, '..', '..'), '.container', relPath);
-            const destPath = path.join(path.join(__dirname, '..', '..'), relPath);
+            const containerRoot = path.resolve(path.join(__dirname, '..', '..'), '.container');
+            const projectRoot = path.resolve(path.join(__dirname, '..', '..'));
+            const sourcePath = path.resolve(containerRoot, relPath);
+            const destPath = path.resolve(projectRoot, relPath);
+            // Path traversal guard: source must stay inside .container, dest inside project root
+            if (!sourcePath.startsWith(containerRoot + path.sep) && sourcePath !== containerRoot) {
+              ws.send(JSON.stringify({ type: 'error', message: 'Geçersiz dosya yolu: sandbox dışına erişim engellendi.' }));
+              break;
+            }
+            if (!destPath.startsWith(projectRoot + path.sep) && destPath !== projectRoot) {
+              ws.send(JSON.stringify({ type: 'error', message: 'Geçersiz hedef yolu: proje kök dizini dışına erişim engellendi.' }));
+              break;
+            }
             if (fs.existsSync(sourcePath)) {
               const destDir = path.dirname(destPath);
               if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
@@ -353,7 +375,7 @@ module.exports = function setupWebSocketHandler(wss, founderKey, discordBot, res
               
               // Temizleme: boş klasörleri sil
               let curDir = path.dirname(sourcePath);
-              while (curDir !== path.join(path.join(__dirname, '..', '..'), '.container')) {
+              while (curDir !== containerRoot) {
                 if (fs.readdirSync(curDir).length === 0) {
                   fs.rmdirSync(curDir);
                   curDir = path.dirname(curDir);
@@ -363,6 +385,7 @@ module.exports = function setupWebSocketHandler(wss, founderKey, discordBot, res
               }
               
               broadcastTerminal(`> [SANDBOX] Dosya başarıyla çalışma alanına aktarıldı: ${relPath}\n  `);
+              addMessage('system', `[SANDBOX] Dosya onaylandı ve aktarıldı: ${relPath}`);
               broadcastSandboxState();
             }
           } catch (err) {
@@ -374,12 +397,18 @@ module.exports = function setupWebSocketHandler(wss, founderKey, discordBot, res
         case 'discard_sandbox_file':
           try {
             const relPath = data.path;
-            const sourcePath = path.join(path.join(__dirname, '..', '..'), '.container', relPath);
-            if (fs.existsSync(sourcePath)) {
-              fs.unlinkSync(sourcePath);
+            const containerRoot2 = path.resolve(path.join(__dirname, '..', '..'), '.container');
+            const sourcePath2 = path.resolve(containerRoot2, relPath);
+            // Path traversal guard: must stay inside .container
+            if (!sourcePath2.startsWith(containerRoot2 + path.sep) && sourcePath2 !== containerRoot2) {
+              ws.send(JSON.stringify({ type: 'error', message: 'Geçersiz dosya yolu: sandbox dışına erişim engellendi.' }));
+              break;
+            }
+            if (fs.existsSync(sourcePath2)) {
+              fs.unlinkSync(sourcePath2);
               
-              let curDir = path.dirname(sourcePath);
-              while (curDir !== path.join(path.join(__dirname, '..', '..'), '.container')) {
+              let curDir = path.dirname(sourcePath2);
+              while (curDir !== containerRoot2) {
                 if (fs.readdirSync(curDir).length === 0) {
                   fs.rmdirSync(curDir);
                   curDir = path.dirname(curDir);
@@ -389,11 +418,13 @@ module.exports = function setupWebSocketHandler(wss, founderKey, discordBot, res
               }
               
               broadcastTerminal(`> [SANDBOX] Konteyner değişikliği reddedildi ve silindi: ${relPath}\n  `);
+              addMessage('system', `[SANDBOX] Değişiklik reddedildi ve silindi: ${relPath}`);
               broadcastSandboxState();
             }
           } catch (err) {
             console.error("Failed to discard sandbox file:", err);
             ws.send(JSON.stringify({ type: 'error', message: 'Dosya silinirken hata: ' + err.message }));
+
           }
           break;
 

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Local AI Agent IDE</title>
+  <link rel="stylesheet" href="ide.css">
+</head>
+<body>
+  <div class="ide-container">
+    
+    <div class="main-content">
+      <!-- Left Panel: File Explorer -->
+      <div class="panel left-panel">
+        <div class="panel-header">
+          <span>Explorer</span>
+          <button id="btn-open-folder" title="Open Folder">📁</button>
+        </div>
+        <div id="workspace-label" style="font-size:10px;padding:2px 6px;color:#666;background:#1a1a1a;word-break:break-all;display:none;"></div>
+        <div class="file-tree" id="file-tree">
+          <div class="empty-state">No folder opened. Use File > Open Folder.</div>
+        </div>
+      </div>
+
+      <!-- Middle Panel: Editor -->
+      <div class="panel middle-panel">
+        <div class="panel-header">
+          <span id="editor-title">Editor</span>
+          <button id="btn-save-file" title="Save File (Ctrl+S)">💾</button>
+        </div>
+        <textarea id="file-editor" spellcheck="false" disabled placeholder="Select a file to edit..."></textarea>
+      </div>
+
+      <!-- Right Panel: Agent Chat -->
+      <div class="panel right-panel">
+        <div class="panel-header">
+          <span>AI Agent</span>
+          <span id="agent-status" class="status offline">Offline</span>
+        </div>
+        <div class="chat-messages" id="chat-messages">
+          <div class="system-message">Agent ready. Send a task below.</div>
+        </div>
+        
+        <div id="approval-box" class="approval-box hidden">
+          <h4>Action Pending Approval</h4>
+          <p id="pending-action-details"></p>
+          <div class="approval-buttons">
+            <button id="btn-approve-action">Approve</button>
+            <button id="btn-reject-action">Reject</button>
+          </div>
+        </div>
+
+        <form id="chat-form" class="chat-form">
+          <input type="text" id="chat-input" placeholder="Ask agent to do something..." autocomplete="off">
+          <button type="submit">Send</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Bottom Panel: Settings -->
+    <div class="bottom-panel">
+      <div class="settings-header">
+        <span>Settings & Metrics</span>
+        <button id="btn-toggle-settings">▲</button>
+      </div>
+      <div class="settings-content hidden" id="settings-content">
+        <div class="settings-grid">
+          <div class="settings-col">
+            <label>System Prompt Extra:</label>
+            <textarea id="setting-prompt-extra" rows="2" placeholder="Extra instructions for agent..."></textarea>
+            
+            <label>Admin Auth Key:</label>
+            <input type="password" id="setting-auth-key" placeholder="Enter FOUNDER_KEY to connect">
+          </div>
+          <div class="settings-col">
+            <label>Blacklist / Banned Commands:</label>
+            <input type="text" id="setting-blacklist" placeholder="e.g. rm -rf, shutdown">
+            <small>Comma separated list</small>
+          </div>
+          <div class="settings-col">
+            <label>Token Usage:</label>
+            <div id="token-usage">0 tokens</div>
+            <label>Model Preferences:</label>
+            <select id="setting-model">
+              <option value="qwen2.5-coder-7b-instruct">qwen2.5-coder-7b-instruct</option>
+              <option value="meta-llama/Llama-3-8B-Instruct">Llama-3-8B-Instruct</option>
+            </select>
+          </div>
+        </div>
+        <button id="btn-save-settings">Save Settings</button>
+      </div>
+    </div>
+  </div>
+  <script src="ide.js"></script>
+</body>
+</html>
